@@ -13,19 +13,18 @@ const masterRoutes = {
     permissions: ['view menu administrator'],
   },
   children: [
-    /** User managements */
-    {
-      path: 'tpaffiliates/edit/:id(\\d+)',
-      component: () => import('@/views/users/UserProfile'),
-      name: 'UserProfile',
-      meta: { title: 'userProfile', noCache: true, permissions: ['manage user'] },
-      hidden: true,
-    },
+    /** Master managements */
     {
       path: 'tpaffiliates',
       component: () => import('@/views/master/tpAffiliates/List'),
-      name: 'UserList',
-      meta: { title: 'Tipo Affiliados', icon: 'peoples', permissions: ['manage user'] },
+      name: 'TpAffiliateList',
+      meta: { title: 'Tipo Affiliados', icon: 'theme', permissions: ['manage user'] },
+    },
+    {
+      path: 'affiliates',
+      component: () => import('@/views/master/affiliates/List'),
+      name: 'AffiliateList',
+      meta: { title: 'Affiliados', icon: 'peoples', permissions: ['manage user'] },
     },
   ],
 };

@@ -16,33 +16,29 @@
     <el-table v-loading="loading" :data="list" border fit highlight-current-row style="width: 100%">
       <el-table-column align="center" label="ID" width="80">
         <template slot-scope="scope">
-          <span>{{ scope.row.index }}</span>
+          <span>{{ scope.row.id }}</span>
         </template>
       </el-table-column>
 
-      <el-table-column align="center" label="Status">
+      <el-table-column align="center" label="Habilitado">
         <template slot-scope="scope">
-          <el-switch v-model="scope.row.status" active-color="#13ce66" inactive-color="#ff4949">
-          </el-switch>
+          <el-switch v-model="scope.row.status" :active-value="'S'" :inactive-value="'N'" active-color="#13ce66" inactive-color="#ff4949" @click.native="handleChangeStatus($event, scope.row.id, scope.row.status)" />
         </template>
       </el-table-column>
 
-      <el-table-column align="center" label="Name">
+      <el-table-column align="center" label="Nome">
         <template slot-scope="scope">
           <span>{{ scope.row.name }}</span>
         </template>
       </el-table-column>
 
-      <el-table-column align="center" label="Description">
+      <el-table-column align="center" label="Ações" width="350">
         <template slot-scope="scope">
-          <span>{{ scope.row.description }}</span>
-        </template>
-      </el-table-column>
-
-      <el-table-column align="center" label="Actions" width="350">
-        <template slot-scope="scope">
-          <el-button v-permission="['manage user']" type="danger" size="small" icon="el-icon-delete" @click="handleDelete(scope.row.id, scope.row.name);">
-            Delete
+          <el-button type="primary" size="small" icon="el-icon-edit" @click="handleEdit(scope.row.id);">
+            Editar
+          </el-button>
+          <el-button type="danger" size="small" icon="el-icon-delete" @click="handleDelete(scope.row.id, scope.row.name);">
+            Excluir
           </el-button>
         </template>
       </el-table-column>
@@ -50,21 +46,42 @@
 
     <pagination v-show="total>0" :total="total" :page.sync="query.page" :limit.sync="query.limit" @pagination="getList" />
 
-    <el-dialog :title="'Cadastrar novo tipo de affiliado'" :visible.sync="dialogFormVisible">
+    <el-dialog :title="'Cadastrar novo tipo de affiliado'" :visible.sync="dialogFormCreateVisible">
       <div v-loading="tpAffiliateCreating" class="form-container">
-        <el-form ref="tpAffiliateForm"  :model="newTpAffiliate" label-position="left" label-width="150px" style="max-width: 500px;">
-          <el-form-item :label="$t('tpAffiliate.name')" prop="name">
+        <el-form ref="tpAffiliateFormCreate" :rules="rules" :model="newTpAffiliate" style="max-width: 500px;">
+          <el-form-item :label="$t('nome')" prop="name">
             <el-input v-model="newTpAffiliate.name" />
           </el-form-item>
-          <el-form-item :label="$t('tpAffiliate.description')" prop="email">
+          <el-form-item :label="$t('Descrição')" prop="description">
             <el-input v-model="newTpAffiliate.description" type="textarea" />
           </el-form-item>
         </el-form>
         <div slot="footer" class="dialog-footer">
-          <el-button @click="dialogFormVisible = false">
+          <el-button @click="dialogFormCreateVisible = false">
             {{ $t('table.cancel') }}
           </el-button>
           <el-button type="primary" @click="createTpAffiliate()">
+            {{ $t('table.confirm') }}
+          </el-button>
+        </div>
+      </div>
+    </el-dialog>
+
+    <el-dialog :title="'Editar tipo de affiliado id ('+ updateTpAffiliate.id +')'" :visible.sync="dialogFormEditVisible" @close="getList">
+      <div v-loading="tpAffiliateEditing" class="form-container">
+        <el-form ref="tpAffiliateFormEdit" :rules="rules" :model="updateTpAffiliate" label-position="left" style="max-width: 500px;">
+          <el-form-item :label="$t('nome')" prop="name">
+            <el-input v-model="updateTpAffiliate.name" />
+          </el-form-item>
+          <el-form-item :label="$t('Descrição')" prop="description">
+            <el-input v-model="updateTpAffiliate.description" type="textarea" />
+          </el-form-item>
+        </el-form>
+        <div slot="footer" class="dialog-footer">
+          <el-button @click="dialogFormEditVisible = false">
+            {{ $t('table.cancel') }}
+          </el-button>
+          <el-button type="primary" @click="editTpAffiliate(updateTpAffiliate.id)">
             {{ $t('table.confirm') }}
           </el-button>
         </div>
@@ -76,14 +93,10 @@
 <script>
 
 import Pagination from '@/components/Pagination'; // Secondary package based on el-pagination
-import TpaffiliateResource from '@/api/master/tpaffiliate';
-// import Resource from '@/api/resource';
+import TpaffiliateResource from '@/api/master/tpaffiliate'; // class api tpaffiliate
 import waves from '@/directive/waves'; // Waves directive
-// import permission from '@/directive/permission'; // Permission directive
-// import checkPermission from '@/utils/permission'; // Permission checking
 
 const tpaffiliateResource = new TpaffiliateResource();
-// const permissionResource = new Resource('permissions');
 
 export default {
   name: 'TpAffiliateList',
@@ -92,65 +105,44 @@ export default {
   data() {
     return {
       list: null,
+      listOld: null,
       total: 0,
       loading: true,
       downloading: false,
       tpAffiliateCreating: false,
+      tpAffiliateEditing: false,
       query: {
         page: 1,
         limit: 15,
         keyword: '',
-        role: '',
+        status: '',
       },
       newTpAffiliate: {},
-      dialogFormVisible: false,
-      currentTpAffiliateId: 0,
+      updateTpAffiliate: {},
+      dialogFormCreateVisible: false,
+      dialogFormEditVisible: false,
       //
       currentTpAffiliate: {
+        id: 0,
+        status: null,
         name: '',
+        description: '',
       },
       rules: {
-        name: [{ required: true, message: 'Name is required', trigger: 'blur' }],
-        description: [{ required: true, message: 'Description is required', trigger: 'blur' }],
+        name: [
+          { required: true, message: 'Nome está vazio', trigger: 'blur' },
+          { min: 4, message: 'Nome deve conter no mínimo 4 caracteres', trigger: ['blur', 'change'] },
+        ],
       },
-      permissionProps: {
-        children: 'children',
-        label: 'name',
-        disabled: 'disabled',
-      },
-      permissions: [],
-      menuPermissions: [],
-      otherPermissions: [],
     };
   },
   computed: {
-    userMenuPermissions() {
-      return this.classifyPermissions(this.userPermissions).menu;
-    },
-    userOtherPermissions() {
-      return this.classifyPermissions(this.userPermissions).other;
-    },
-    userPermissions() {
-      return this.currentTpAffiliate.permissions.role.concat(this.currentTpAffiliate.permissions.user);
-    },
   },
   created() {
     this.resetNewTpAffiliate();
     this.getList();
-    // if (checkPermission(['manage permission'])) {
-    //   this.getPermissions();
-    // }
   },
   methods: {
-    // checkPermission,
-    // async getPermissions() {
-    // const { data } = await permissionResource.list({});
-    //  const { all, menu, other } = this.classifyPermissions(data);
-    //  this.permissions = all;
-    //  this.menuPermissions = menu;
-    //  this.otherPermissions = other;
-    // },
-
     async getList() {
       const { limit, page } = this.query;
       this.loading = true;
@@ -168,21 +160,33 @@ export default {
     },
     handleCreate() {
       this.resetNewTpAffiliate();
-      this.dialogFormVisible = true;
+      this.dialogFormCreateVisible = true;
       this.$nextTick(() => {
-        this.$refs['tpAffiliateForm'].clearValidate();
+        this.$refs['tpAffiliateFormCreate'].clearValidate();
+      });
+    },
+    handleEdit(id) {
+      this.updateTpAffiliate = {};
+      this.listOld = this.list;
+      this.updateTpAffiliate = this.list.filter(tpAffiliateFiltered => tpAffiliateFiltered.id === id);
+      // this.updateTpAffiliate = Object.values(this.list).filter(tpAffiliateFiltered => tpAffiliateFiltered.id === id);
+      this.updateTpAffiliate = this.updateTpAffiliate[0];
+      this.list = this.listOld;
+      this.dialogFormEditVisible = true;
+      this.$nextTick(() => {
+        this.$refs['tpAffiliateFormEdit'].clearValidate();
       });
     },
     handleDelete(id, name) {
-      this.$confirm('This will permanently delete tipo de afiliado ' + name + '. Continue?', 'Warning', {
-        confirmButtonText: 'OK',
-        cancelButtonText: 'Cancel',
+      this.$confirm('Confirma excluir o tipo de afiliado ' + name + '. Confirmar?', 'Warning', {
+        confirmButtonText: 'Sim',
+        cancelButtonText: 'Cancelar',
         type: 'warning',
       }).then(() => {
         tpaffiliateResource.destroy(id).then(response => {
           this.$message({
             type: 'success',
-            message: 'Delete completed',
+            message: 'Excluído com sucesso',
           });
           this.handleFilter();
         }).catch(error => {
@@ -191,44 +195,33 @@ export default {
       }).catch(() => {
         this.$message({
           type: 'info',
-          message: 'Delete canceled',
+          message: 'Exclusão cancelada',
         });
       });
     },
-    createTpAffiliate() {
-      this.$refs['tpAffiliateForm'].validate((valid) => {
-        if (valid) {
-          this.newTpAffiliate.roles = [this.newTpAffiliate.role];
-          this.tpAffiliateCreating = true;
-          tpaffiliateResource
-            .store(this.newTpAffiliate)
-            .then(response => {
-              this.$message({
-                message: 'New tipo de afiliado ' + this.newTpAffiliate.name + 'has been created successfully.',
-                type: 'success',
-                duration: 5 * 1000,
-              });
-              this.resetNewTpAffiliate();
-              this.dialogFormVisible = false;
-              this.handleFilter();
-            })
-            .catch(error => {
-              console.log(error);
-            })
-            .finally(() => {
-              this.tpAffiliateCreating = false;
+    handleChangeStatus(event, objectId, objectStatus){
+      this.currentTpAffiliate.status = objectStatus;
+      tpaffiliateResource
+        .changeStatus(objectId, this.currentTpAffiliate)
+        .then(response => {
+          if (objectStatus === 'S'){
+            this.$message({
+              message: 'Tipo de afiliado id (' + objectId + ') habilitado.',
+              type: 'success',
+              duration: 5 * 1000,
             });
-        } else {
-          console.log('error submit!!');
-          return false;
-        }
-      });
-    },
-    resetNewTpAffiliate() {
-      this.newTpAffiliate = {
-        name: '',
-        description: '',
-      };
+          } else {
+            this.$message({
+              message: 'Tipo de afiliado id (' + objectId + ') desabilitado.',
+              type: 'warning',
+              duration: 5 * 1000,
+            });
+          }
+        })
+        .catch(error => {
+          console.log(error);
+          this.getList();
+        });
     },
     handleDownload() {
       this.downloading = true;
@@ -244,54 +237,70 @@ export default {
         this.downloading = false;
       });
     },
+    createTpAffiliate() {
+      this.$refs['tpAffiliateFormCreate'].validate((valid) => {
+        if (valid) {
+          this.newTpAffiliate.roles = [this.newTpAffiliate.role];
+          this.tpAffiliateCreating = true;
+          tpaffiliateResource
+            .store(this.newTpAffiliate)
+            .then(response => {
+              this.$message({
+                message: 'Novo tipo de afiliado ' + this.newTpAffiliate.name + ' cadastrado com sucesso.',
+                type: 'success',
+                duration: 5 * 1000,
+              });
+              console.log(response);
+              this.resetNewTpAffiliate();
+              this.dialogFormCreateVisible = false;
+              this.handleFilter();
+            })
+            .catch(error => {
+              console.log(error);
+            })
+            .finally(() => {
+              this.tpAffiliateCreating = false;
+            });
+        } else {
+          console.log('Erro ao cadastrar!!');
+          return false;
+        }
+      });
+    },
+    editTpAffiliate(id){
+      this.$refs['tpAffiliateFormEdit'].validate((valid) => {
+        if (valid) {
+          this.tpAffiliateEditing = true;
+          tpaffiliateResource
+            .update(id, this.updateTpAffiliate)
+            .then(response => {
+              this.$message({
+                message: 'Tipo de afiliado id (' + this.updateTpAffiliate.id + ') atualizado com sucesso.',
+                type: 'success',
+                duration: 5 * 1000,
+              });
+              this.updateTpAffiliate = {};
+              this.dialogFormEditVisible = false;
+              this.getList();
+            })
+            .catch(error => {
+              console.log(error);
+            })
+            .finally(() => {
+              this.tpAffiliateEditing = false;
+            });
+        } else {
+          console.log('Erro ao editar!!');
+          return false;
+        }
+      });
+    },
+    resetNewTpAffiliate() {
+      this.newTpAffiliate = {};
+    },
     formatJson(filterVal, jsonData) {
       return jsonData.map(v => filterVal.map(j => v[j]));
     },
-    strToBool(string){
-      return (string === 'S');
-    },
-    // permissionKeys(permissions) {
-    //   return permissions.map(permssion => permssion.id);
-    // },
-    // classifyPermissions(permissions) {
-    //   const all = []; const menu = []; const other = [];
-    //   permissions.forEach(permission => {
-    //     const permissionName = permission.name;
-    //     all.push(permission);
-    //     if (permissionName.startsWith('view menu')) {
-    //       menu.push(this.normalizeMenuPermission(permission));
-    //     } else {
-    //       other.push(this.normalizePermission(permission));
-    //     }
-    //   });
-    //   return { all, menu, other };
-    // },
-    /*
-    normalizeMenuPermission(permission) {
-      return { id: permission.id, name: this.$options.filters.uppercaseFirst(permission.name.substring(10)), disabled: permission.disabled || false };
-    },
-
-    normalizePermission(permission) {
-      const disabled = permission.disabled || permission.name === 'manage permission';
-      return { id: permission.id, name: this.$options.filters.uppercaseFirst(permission.name), disabled: disabled };
-    },
-
-    confirmPermission() {
-      const checkedMenu = this.$refs.menuPermissions.getCheckedKeys();
-      const checkedOther = this.$refs.otherPermissions.getCheckedKeys();
-      const checkedPermissions = checkedMenu.concat(checkedOther);
-      this.dialogPermissionLoading = true;
-
-      userResource.updatePermission(this.currentTpAffiliateId, { permissions: checkedPermissions }).then(response => {
-        this.$message({
-          message: 'Permissions has been updated successfully',
-          type: 'success',
-          duration: 5 * 1000,
-        });
-        this.dialogPermissionLoading = false;
-        this.dialogPermissionVisible = false;
-      });
-    },*/
   },
 };
 </script>
@@ -308,7 +317,7 @@ export default {
 .dialog-footer {
   text-align: left;
   padding-top: 0;
-  margin-left: 150px;
+  // margin-left: 150px;
 }
 .app-container {
   flex: 1;
@@ -321,6 +330,14 @@ export default {
   }
   .clear-left {
     clear: left;
+  }
+}
+@media only screen and (max-width: 575px) {
+  .el-dialog {
+    width: 90%;
+  }
+  .app-container {
+    padding: 40px;
   }
 }
 </style>

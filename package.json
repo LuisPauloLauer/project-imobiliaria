@@ -76,6 +76,7 @@
     "screenfull": "^4.2.1",
     "sortablejs": "^1.10.2",
     "tui-editor": "^1.4.6",
+    "v-mask": "^2.3.0",
     "vue": "2.6.10",
     "vue-count-to": "^1.0.13",
     "vue-i18n": "^8.21.0",

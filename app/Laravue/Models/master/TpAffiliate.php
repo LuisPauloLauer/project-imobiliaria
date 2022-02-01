@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Laravue\Models;
+namespace App\Laravue\Models\master;
 
 use Illuminate\Database\Eloquent\Model;
 

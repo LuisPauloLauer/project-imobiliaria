@@ -29,16 +29,26 @@ Route::namespace('Api')->group(function() {
             return new UserResource($request->user());
         });
 
-        // Api resource routes
-        //Master
+        //***** Api resource routes *****//
+        //*** Master
         Route::apiResource('tpaffiliates', 'master\TpAffiliateController')->middleware('permission:' . Acl::PERMISSION_USER_MANAGE);
+        Route::apiResource('affiliates', 'master\AffiliateController')->middleware('permission:' . Acl::PERMISSION_USER_MANAGE);
 
-        //Admin
+
+        //*** Admin
         Route::apiResource('roles', 'RoleController')->middleware('permission:' . Acl::PERMISSION_PERMISSION_MANAGE);
         Route::apiResource('users', 'UserController')->middleware('permission:' . Acl::PERMISSION_USER_MANAGE);
         Route::apiResource('permissions', 'PermissionController')->middleware('permission:' . Acl::PERMISSION_PERMISSION_MANAGE);
 
-        // Custom routes
+        //***** Api Custom routes *****//
+        //*** master
+        //tpaffiliates
+        Route::put('tpaffiliates/{tpaffiliate}/change/status', 'master\TpAffiliateController@changeStatus')->middleware('permission:' . Acl::PERMISSION_USER_MANAGE);
+        Route::get('tpaffiliates/list/list', 'master\TpAffiliateController@listWithParams')->middleware('permission:' . Acl::PERMISSION_USER_MANAGE);
+        //affiliates
+        Route::put('affiliates/{affiliate}/change/status', 'master\AffiliateController@changeStatus')->middleware('permission:' . Acl::PERMISSION_USER_MANAGE);
+
+        //*** Admin
         Route::put('users/{user}', 'UserController@update');
         Route::get('users/{user}/permissions', 'UserController@permissions')->middleware('permission:' . Acl::PERMISSION_PERMISSION_MANAGE);
         Route::put('users/{user}/permissions', 'UserController@updatePermissions')->middleware('permission:' .Acl::PERMISSION_PERMISSION_MANAGE);

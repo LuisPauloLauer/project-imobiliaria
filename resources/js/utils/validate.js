@@ -53,3 +53,18 @@ export function validEmail(email) {
   const re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
   return re.test(email);
 }
+
+/**
+ * Validate an zipCode address
+ * @param {String} zipcode
+ * @return {Boolean}
+ */
+export function validateZipCode(zipcode) {
+  const pattern = /^[0-9]{5}-[0-9]{3}$/;
+  if (pattern.test(zipcode)){
+    zipcode = zipcode.replace(/\D/, '');
+    return (zipcode.length === 8);
+  } else {
+    return false;
+  }
+}

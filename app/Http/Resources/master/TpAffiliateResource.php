@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Resources;
+namespace App\Http\Resources\master;
 
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -16,7 +16,7 @@ class TpAffiliateResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'status' => ($this->status == "S" ? true : false),
+            'status' => $this->status, //($this->status == "S" ? true : false),
             'name' => $this->name,
             'description' => $this->description,
         ];

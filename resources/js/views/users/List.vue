@@ -61,7 +61,7 @@
     <pagination v-show="total>0" :total="total" :page.sync="query.page" :limit.sync="query.limit" @pagination="getList" />
 
     <el-dialog :visible.sync="dialogPermissionVisible" :title="'Edit Permissions - ' + currentUser.name">
-      <div v-if="currentUser.name" v-loading="dialogPermissionLoading" class="form-container">
+      <div v-if="currentUser.name" v-loading="dialogPermissionLoading" class="is-align-middle">
         <div class="permissions-container">
           <div class="block">
             <el-form :model="currentUser" label-width="80px" label-position="top">

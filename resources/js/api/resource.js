@@ -14,6 +14,13 @@ class Resource {
       params: query,
     });
   }
+  listWithParams(query){
+    return request({
+      url: '/' + this.uri + '/list/list',
+      method: 'get',
+      params: query,
+    });
+  }
   get(id) {
     return request({
       url: '/' + this.uri + '/' + id,
@@ -38,6 +45,13 @@ class Resource {
     return request({
       url: '/' + this.uri + '/' + id,
       method: 'delete',
+    });
+  }
+  changeStatus(id, resource){
+    return request({
+      url: '/' + this.uri + '/' + id + '/change/status',
+      method: 'put',
+      data: resource,
     });
   }
 }
